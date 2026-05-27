@@ -102,15 +102,19 @@ public class FileTransferServer {
                     long received = 0;
                     int read;
 
-                    while (received < fileSize &&
-                            (read = in.read(buf, 0, (int) Math.min(buf.length, fileSize - received))) != -1) {
+                    // fileSize < 0 means unknown — read until EOF (single-file safe)
+                    while ((fileSize < 0 || received < fileSize) &&
+                            (read = in.read(buf, 0, fileSize < 0 ? buf.length
+                                    : (int) Math.min(buf.length, fileSize - received))) != -1) {
                         fos.write(buf, 0, read);
                         received += read;
-                        final int percent = (fileSize > 0) ? (int) (received * 100L / fileSize) : 0;
+                        final int percent = (fileSize > 0) ? (int) (received * 100L / fileSize) : -1;
                         final String fn = fileName;
-                        mainHandler.post(() -> {
-                            if (callback != null) callback.onProgressUpdate(fn, percent);
-                        });
+                        if (percent >= 0) {
+                            mainHandler.post(() -> {
+                                if (callback != null) callback.onProgressUpdate(fn, percent);
+                            });
+                        }
                     }
                 }
 

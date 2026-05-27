@@ -229,25 +229,20 @@ public class WifiDirectManager {
     // -------------------------------------------------------------------------
 
     void onConnectionChanged(android.net.NetworkInfo networkInfo) {
-        if (networkInfo != null && networkInfo.isConnected()) {
-            manager.requestConnectionInfo(channel, info -> {
-                if (info != null && info.groupFormed) {
-                    String ip = GROUP_OWNER_IP;
-                    Log.d(TAG, "Connected to group, GO IP=" + ip);
-                    
-                    // Only consume the callback if we are indeed connected
-                    ConnectionCallback cb = pendingConnectionCallback;
-                    if (cb != null) {
-                        pendingConnectionCallback = null;
-                        mainHandler.post(() -> cb.onConnected(ip));
-                    }
+        // Always call requestConnectionInfo — on Android 13+ networkInfo may be null
+        // even when a connection is established (deprecated extra).
+        manager.requestConnectionInfo(channel, info -> {
+            if (info != null && info.groupFormed) {
+                Log.d(TAG, "Connected to group, GO IP=" + GROUP_OWNER_IP);
+                ConnectionCallback cb = pendingConnectionCallback;
+                if (cb != null) {
+                    pendingConnectionCallback = null;
+                    mainHandler.post(() -> cb.onConnected(GROUP_OWNER_IP));
                 }
-            });
-        } else {
-            Log.d(TAG, "P2P disconnected or connecting...");
-            // Don't clear pendingConnectionCallback immediately on "not connected" 
-            // because we might be in the middle of a connection attempt.
-            // But if we were previously connected and now disconnected, we might want to notify.
-        }
+            } else {
+                boolean wasDisconnected = networkInfo != null && !networkInfo.isConnected();
+                Log.d(TAG, "P2P state changed, groupFormed=false, disconnected=" + wasDisconnected);
+            }
+        });
     }
 }

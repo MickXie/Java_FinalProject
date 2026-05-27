@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
+import android.os.Build;
 import android.util.Log;
 
 /**
@@ -43,7 +44,13 @@ public class WifiP2pBroadcastReceiver extends BroadcastReceiver {
             }
 
             case WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION: {
-                NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                NetworkInfo networkInfo;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    networkInfo = intent.getParcelableExtra(
+                            WifiP2pManager.EXTRA_NETWORK_INFO, NetworkInfo.class);
+                } else {
+                    networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                }
                 Log.d(TAG, "Wi-Fi P2P connection changed: connected=" +
                         (networkInfo != null && networkInfo.isConnected()));
                 wifiDirectManager.onConnectionChanged(networkInfo);
@@ -51,7 +58,13 @@ public class WifiP2pBroadcastReceiver extends BroadcastReceiver {
             }
 
             case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: {
-                WifiP2pDevice device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+                WifiP2pDevice device;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    device = intent.getParcelableExtra(
+                            WifiP2pManager.EXTRA_WIFI_P2P_DEVICE, WifiP2pDevice.class);
+                } else {
+                    device = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+                }
                 if (device != null) {
                     Log.d(TAG, "This device changed: " + device.deviceName
                             + " status=" + device.status);
