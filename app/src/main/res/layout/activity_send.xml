@@ -53,6 +53,15 @@
         android:layout_marginBottom="12dp" />
 
     <Button
+        android:id="@+id/btn_show_qr"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/btn_scan_qr"
+        android:textSize="14sp"
+        android:backgroundTint="@color/accent"
+        android:layout_marginBottom="8dp" />
+
+    <Button
         android:id="@+id/btn_start_send"
         android:layout_width="match_parent"
         android:layout_height="56dp"

@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.journeyapps.barcodescanner.CaptureActivity;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import android.content.Intent;
 
@@ -22,8 +26,11 @@ public class QrCodeHelper {
             json.put("pass", passphrase);
             String content = json.toString();
 
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+
             BarcodeEncoder encoder = new BarcodeEncoder();
-            return encoder.encodeBitmap(content, BarcodeFormat.QR_CODE, sizePixels, sizePixels);
+            return encoder.encodeBitmap(content, BarcodeFormat.QR_CODE, sizePixels, sizePixels, hints);
         } catch (WriterException | JSONException e) {
             return null;
         }

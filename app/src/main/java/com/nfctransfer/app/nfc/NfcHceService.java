@@ -68,6 +68,10 @@ public class NfcHceService extends HostApduService {
         Log.d(TAG, "Received APDU: " + bytesToHex(commandApdu));
 
         if (isSelectAid(commandApdu)) {
+            if (pendingJson == null) {
+                Log.w(TAG, "SELECT AID — credentials not ready, rejecting");
+                return SW_UNKNOWN;
+            }
             Log.d(TAG, "SELECT AID — responding 9000");
             return SW_OK;
         }

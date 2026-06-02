@@ -21,6 +21,7 @@
     <string name="btn_start_receive">開始接收</string>
     <string name="btn_stop_receive">停止接收</string>
     <string name="btn_show_qr">顯示 QR Code</string>
+    <string name="btn_scan_qr">掃描 QR Code 連線</string>
     <string name="nfc_enabled">NFC 已開啟</string>
     <string name="nfc_disabled">NFC 未開啟 — 點此前往設定</string>
     <string name="confirm_clear_title">清除紀錄</string>

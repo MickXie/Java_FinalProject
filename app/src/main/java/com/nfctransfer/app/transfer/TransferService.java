@@ -13,6 +13,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.nfctransfer.app.R;
 import com.nfctransfer.app.data.HistoryRepository;
 import com.nfctransfer.app.data.TransferRecord;
+import com.nfctransfer.app.wifi.WifiDirectManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,8 +90,8 @@ public class TransferService extends Service {
             @Override
             public void onFileSent(String fileName, long fileSize) {
                 HistoryRepository repo = new HistoryRepository(TransferService.this);
-                repo.insert(new TransferRecord(fileName, fileSize, "SENT",
-                        System.currentTimeMillis(), "SUCCESS"));
+                repo.insert(new TransferRecord(fileName, fileSize, null,
+                        System.currentTimeMillis(), "SENT", "SUCCESS", null));
             }
 
             @Override
@@ -110,8 +111,8 @@ public class TransferService extends Service {
                 TransferNotificationHelper.showErrorNotification(TransferService.this, fileName);
                 if (fileName != null) {
                     HistoryRepository repo = new HistoryRepository(TransferService.this);
-                    repo.insert(new TransferRecord(fileName, -1, "SEND",
-                            System.currentTimeMillis(), "FAILED"));
+                    repo.insert(new TransferRecord(fileName, -1, null,
+                            System.currentTimeMillis(), "SENT", "FAILED", null));
                 }
                 Intent broadcast = new Intent(BROADCAST_ERROR);
                 broadcast.putExtra(EXTRA_FILE_NAME, fileName);
@@ -136,8 +137,8 @@ public class TransferService extends Service {
             @Override
             public void onFileReceived(String fileName, String filePath, long fileSize) {
                 HistoryRepository repo = new HistoryRepository(TransferService.this);
-                repo.insert(new TransferRecord(fileName, fileSize, "RECEIVE",
-                        System.currentTimeMillis(), "SUCCESS"));
+                repo.insert(new TransferRecord(fileName, fileSize, filePath,
+                        System.currentTimeMillis(), "RECEIVED", "SUCCESS", null));
             }
 
             @Override
@@ -176,6 +177,7 @@ public class TransferService extends Service {
     public void onDestroy() {
         super.onDestroy();
         if (server != null) server.stop();
+        if (client != null) client.shutdown();
     }
 
     @Override

@@ -26,7 +26,7 @@ public class FileTransferServer {
     public interface Callback {
         void onProgressUpdate(String fileName, int percent);
         void onFileReceived(String fileName, String filePath, long fileSize);
-        void onAllFilesReceived(int totalCount);
+        void onAllFilesReceived(int count);
         void onError(String fileName, Exception e);
     }
 
@@ -35,9 +35,9 @@ public class FileTransferServer {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean running = false;
 
-    public void start(Context context, Callback callback) {
+    public void start(Context ctx, Callback callback) {
         running = true;
-        executor.execute(() -> acceptLoop(context.getApplicationContext(), callback));
+        executor.execute(() -> acceptAndReceive(ctx.getApplicationContext(), callback));
     }
 
     public void stop() {
@@ -52,18 +52,29 @@ public class FileTransferServer {
         executor.shutdownNow();
     }
 
-    private void acceptLoop(Context context, Callback callback) {
+    private void acceptAndReceive(Context context, Callback callback) {
         try {
             serverSocket = new ServerSocket(PORT);
             Log.d(TAG, "Listening on port " + PORT);
+
             while (running) {
-                Socket client = serverSocket.accept();
-                Log.d(TAG, "Client connected: " + client.getInetAddress());
-                handleClient(context, client, callback);
+                try {
+                    Socket client = serverSocket.accept();
+                    Log.d(TAG, "Client connected: " + client.getInetAddress());
+                    handleClient(context, client, callback);
+                } catch (IOException e) {
+                    if (running) {
+                        Log.e(TAG, "Accept error", e);
+                        mainHandler.post(() -> {
+                            if (callback != null) callback.onError(null, e);
+                        });
+                    }
+                    break;
+                }
             }
         } catch (IOException e) {
             if (running) {
-                Log.e(TAG, "Server error", e);
+                Log.e(TAG, "Server socket error", e);
                 mainHandler.post(() -> {
                     if (callback != null) callback.onError(null, e);
                 });
@@ -102,7 +113,6 @@ public class FileTransferServer {
                     long received = 0;
                     int read;
 
-                    // fileSize < 0 means unknown — read until EOF (single-file safe)
                     while ((fileSize < 0 || received < fileSize) &&
                             (read = in.read(buf, 0, fileSize < 0 ? buf.length
                                     : (int) Math.min(buf.length, fileSize - received))) != -1) {
@@ -121,13 +131,15 @@ public class FileTransferServer {
                 Log.d(TAG, "File saved: " + filePath);
                 final String fn = fileName;
                 final long fs = fileSize;
+                final String fp = filePath;
                 mainHandler.post(() -> {
-                    if (callback != null) callback.onFileReceived(fn, filePath, fs);
+                    if (callback != null) callback.onFileReceived(fn, fp, fs);
                 });
             }
 
+            final int total = totalFiles;
             mainHandler.post(() -> {
-                if (callback != null) callback.onAllFilesReceived(totalFiles);
+                if (callback != null) callback.onAllFilesReceived(total);
             });
 
         } catch (IOException e) {

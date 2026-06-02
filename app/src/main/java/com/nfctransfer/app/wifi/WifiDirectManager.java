@@ -204,19 +204,29 @@ public class WifiDirectManager {
 
     /** Register the Wi-Fi P2P broadcast receiver for the given Activity. */
     public void registerReceiver(Activity activity) {
+        registerReceiver((Context) activity);
+    }
+
+    /** Register the Wi-Fi P2P broadcast receiver for the given Context (Service-friendly). */
+    public void registerReceiver(Context ctx) {
         broadcastReceiver = new WifiP2pBroadcastReceiver(manager, channel, this);
         IntentFilter filter = new IntentFilter();
         filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
         filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        activity.registerReceiver(broadcastReceiver, filter);
+        ctx.registerReceiver(broadcastReceiver, filter);
     }
 
     /** Unregister the Wi-Fi P2P broadcast receiver. */
     public void unregisterReceiver(Activity activity) {
+        unregisterReceiver((Context) activity);
+    }
+
+    /** Unregister the Wi-Fi P2P broadcast receiver for the given Context. */
+    public void unregisterReceiver(Context ctx) {
         if (broadcastReceiver != null) {
             try {
-                activity.unregisterReceiver(broadcastReceiver);
+                ctx.unregisterReceiver(broadcastReceiver);
             } catch (IllegalArgumentException ignored) {
                 // Already unregistered
             }

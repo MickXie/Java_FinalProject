@@ -1,12 +1,9 @@
 package com.nfctransfer.app.transfer;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.OpenableColumns;
 import android.util.Log;
 
 import java.io.DataOutputStream;
@@ -23,43 +20,70 @@ public class FileTransferClient {
 
     private static final String TAG = "FileTransferClient";
     private static final int BUFFER_SIZE = 65536;
+    private static final int RETRY_COUNT = 3;
+    private static final int RETRY_DELAY_MS = 1000;
 
     public interface Callback {
         void onProgressUpdate(String fileName, int percent);
         void onFileSent(String fileName, long fileSize);
-        void onAllFilesSent(int totalCount);
+        void onAllFilesSent(int count);
         void onError(String fileName, Exception e);
     }
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    public void sendFiles(Context context, String targetIp, List<Uri> fileUris, Callback callback) {
-        executor.execute(() -> doSend(context.getApplicationContext(), targetIp, fileUris, callback));
+    public void sendFiles(Context ctx, String serverIp, List<Uri> uris, Callback callback) {
+        executor.execute(() -> doSend(ctx.getApplicationContext(), serverIp, uris, callback));
     }
 
-    private void doSend(Context context, String targetIp, List<Uri> fileUris, Callback callback) {
-        ContentResolver cr = context.getContentResolver();
+    public void shutdown() {
+        executor.shutdownNow();
+    }
 
-        try (Socket socket = new Socket(targetIp, FileTransferServer.PORT);
-             OutputStream raw = socket.getOutputStream()) {
+    private void doSend(Context context, String serverIp, List<Uri> uris, Callback callback) {
+        Socket socket = null;
+        IOException lastError = null;
+
+        for (int attempt = 0; attempt < RETRY_COUNT; attempt++) {
+            try {
+                socket = new Socket(serverIp, FileTransferServer.PORT);
+                break;
+            } catch (IOException e) {
+                lastError = e;
+                Log.w(TAG, "Connection attempt " + (attempt + 1) + " failed, retrying...");
+                try { Thread.sleep(RETRY_DELAY_MS); } catch (InterruptedException ignored) {}
+            }
+        }
+
+        if (socket == null) {
+            final IOException err = lastError;
+            mainHandler.post(() -> {
+                if (callback != null) callback.onError(null, err);
+            });
+            return;
+        }
+
+        try (Socket s = socket;
+             OutputStream raw = s.getOutputStream()) {
 
             DataOutputStream out = new DataOutputStream(raw);
 
-            out.writeInt(fileUris.size());
+            int totalFiles = uris.size();
+            out.writeInt(totalFiles);
 
-            for (Uri uri : fileUris) {
-                String fileName = resolveFileName(cr, uri);
-                long fileSize = resolveFileSize(cr, uri);
+            for (Uri uri : uris) {
+                String fileName = resolveFileName(context, uri);
+                long fileSize = resolveFileSize(context, uri);
 
                 byte[] nameBytes = fileName.getBytes(StandardCharsets.UTF_8);
                 out.writeInt(nameBytes.length);
                 out.write(nameBytes);
                 out.writeLong(fileSize);
 
-                Log.d(TAG, "Sending: " + fileName + " (" + fileSize + " bytes) to " + targetIp);
+                Log.d(TAG, "Sending: " + fileName + " (" + fileSize + " bytes)");
 
-                try (InputStream input = cr.openInputStream(uri)) {
+                try (InputStream input = context.getContentResolver().openInputStream(uri)) {
                     byte[] buf = new byte[BUFFER_SIZE];
                     long sent = 0;
                     int read;
@@ -86,24 +110,25 @@ public class FileTransferClient {
                 });
             }
 
-            final int total = fileUris.size();
+            final int total = totalFiles;
             mainHandler.post(() -> {
                 if (callback != null) callback.onAllFilesSent(total);
             });
 
         } catch (IOException e) {
-            Log.e(TAG, "Send error", e);
+            Log.e(TAG, "Error sending file", e);
             mainHandler.post(() -> {
                 if (callback != null) callback.onError(null, e);
             });
         }
     }
 
-    private String resolveFileName(ContentResolver cr, Uri uri) {
+    private String resolveFileName(Context context, Uri uri) {
         if ("content".equals(uri.getScheme())) {
-            try (Cursor cursor = cr.query(uri, null, null, null, null)) {
+            try (android.database.Cursor cursor = context.getContentResolver()
+                    .query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
-                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    int idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
                     if (idx >= 0) return cursor.getString(idx);
                 }
             } catch (Exception ignored) {}
@@ -112,11 +137,12 @@ public class FileTransferClient {
         return last != null ? last : "file_" + System.currentTimeMillis();
     }
 
-    private long resolveFileSize(ContentResolver cr, Uri uri) {
+    private long resolveFileSize(Context context, Uri uri) {
         if ("content".equals(uri.getScheme())) {
-            try (Cursor cursor = cr.query(uri, null, null, null, null)) {
+            try (android.database.Cursor cursor = context.getContentResolver()
+                    .query(uri, null, null, null, null)) {
                 if (cursor != null && cursor.moveToFirst()) {
-                    int idx = cursor.getColumnIndex(OpenableColumns.SIZE);
+                    int idx = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE);
                     if (idx >= 0 && !cursor.isNull(idx)) return cursor.getLong(idx);
                 }
             } catch (Exception ignored) {}

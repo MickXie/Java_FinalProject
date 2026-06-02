@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- NFC -->
     <uses-permission android:name="android.permission.NFC" />
@@ -63,7 +64,8 @@
 
         <activity
             android:name=".ReceiveActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
 
         <activity
             android:name=".HistoryActivity"
@@ -82,9 +84,21 @@
                 android:resource="@xml/apdu_service" />
         </service>
 
+        <!-- Override ZXing CaptureActivity to stay portrait -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="fullSensor"
+            tools:replace="android:screenOrientation" />
+
         <!-- Transfer Foreground Service -->
         <service
             android:name=".transfer.TransferService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Receiver Foreground Service -->
+        <service
+            android:name=".transfer.ReceiverForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
