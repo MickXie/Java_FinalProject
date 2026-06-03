@@ -57,6 +57,10 @@ public class WifiP2pBroadcastReceiver extends BroadcastReceiver {
                 break;
             }
 
+            case WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION:
+                Log.d(TAG, "Wi-Fi P2P peers changed");
+                break;
+
             case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION: {
                 WifiP2pDevice device;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

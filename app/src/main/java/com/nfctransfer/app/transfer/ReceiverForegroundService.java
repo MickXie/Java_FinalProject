@@ -4,6 +4,8 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -36,6 +38,20 @@ public class ReceiverForegroundService extends Service {
 
     private static final int FOREGROUND_ID = 3001;
 
+    // Static cache so ReceiveActivity can recover credentials after rotation or
+    // re-resume without needing to wait for another BROADCAST_READY.
+    private static volatile String cachedSsid = null;
+    private static volatile String cachedPass = null;
+
+    /** Returns the SSID last broadcast by this service, or null if not ready. */
+    public static String getCachedSsid() { return cachedSsid; }
+
+    /** Returns the passphrase last broadcast by this service, or null if not ready. */
+    public static String getCachedPass() { return cachedPass; }
+
+    /** True when the service has a live group (credentials are valid). */
+    public static volatile boolean isReady = false;
+
     private WifiDirectManager wifiDirectManager;
     private FileTransferServer fileServer;
     private boolean receiverRegistered = false;
@@ -56,7 +72,12 @@ public class ReceiverForegroundService extends Service {
 
         String action = intent.getAction();
         if (ACTION_START.equals(action)) {
-            startForeground(FOREGROUND_ID, buildNotification("初始化中..."));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(FOREGROUND_ID, buildNotification("初始化中..."),
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(FOREGROUND_ID, buildNotification("初始化中..."));
+            }
             registerWifiReceiver();
             startGroupAndServer();
         } else if (ACTION_STOP.equals(action)) {
@@ -81,13 +102,23 @@ public class ReceiverForegroundService extends Service {
     }
 
     private void startGroupAndServer() {
+        // Guard against double-start: stop old server so port 8888 is freed
+        if (fileServer != null) {
+            fileServer.stop();
+            fileServer = null;
+        }
         wifiDirectManager.createGroup(new WifiDirectManager.GroupInfoCallback() {
             @Override
             public void onGroupCreated(String ssid, String passphrase) {
                 Log.d(TAG, "Group created: ssid=" + ssid);
 
+                // Cache credentials so ReceiveActivity can recover them after rotation
+                cachedSsid = ssid;
+                cachedPass = passphrase;
+                isReady = true;
+
                 NfcHceService.setCredentials(ssid, passphrase);
-                startService(new Intent(ReceiverForegroundService.this, NfcHceService.class));
+                wifiDirectManager.warmUpRadio();
 
                 startFileServer();
 
@@ -164,7 +195,11 @@ public class ReceiverForegroundService extends Service {
 
     private void stopReceiving() {
         NfcHceService.clearCredentials();
-        stopService(new Intent(this, NfcHceService.class));
+
+        // Clear the static credential cache so ReceiveActivity knows the service stopped
+        cachedSsid = null;
+        cachedPass = null;
+        isReady = false;
 
         wifiDirectManager.removeGroup();
 
@@ -187,6 +222,9 @@ public class ReceiverForegroundService extends Service {
             fileServer = null;
         }
         NfcHceService.clearCredentials();
+        cachedSsid = null;
+        cachedPass = null;
+        isReady = false;
         unregisterWifiReceiver();
     }
 

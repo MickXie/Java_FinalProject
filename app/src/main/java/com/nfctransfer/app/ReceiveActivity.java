@@ -124,7 +124,21 @@ public class ReceiveActivity extends AppCompatActivity {
 
                     case ReceiverForegroundService.BROADCAST_ERROR:
                         String error = intent.getStringExtra(ReceiverForegroundService.EXTRA_FILE_NAME);
-                        tvStatus.setText("接收失敗: " + (error != null ? error : "未知錯誤"));
+                        tvStatus.setText("初始化失敗，請重新點「開始接收」");
+                        Toast.makeText(ReceiveActivity.this,
+                                "錯誤: " + (error != null ? error : "未知"), Toast.LENGTH_LONG).show();
+                        // Reset UI so user can retry
+                        serviceRunning = false;
+                        currentSsid = null;
+                        currentPass = null;
+                        btnStartReceive.setText(getString(R.string.btn_start_receive));
+                        btnShowQr.setEnabled(false);
+                        progressReceive.setVisibility(View.GONE);
+                        if (tvFileInfo != null) tvFileInfo.setVisibility(View.GONE);
+                        // Stop the stuck service
+                        Intent stopIntent = new Intent(ReceiveActivity.this, ReceiverForegroundService.class);
+                        stopIntent.setAction(ReceiverForegroundService.ACTION_STOP);
+                        startService(stopIntent);
                         break;
                 }
             }
@@ -140,6 +154,24 @@ public class ReceiveActivity extends AppCompatActivity {
         filter.addAction(ReceiverForegroundService.BROADCAST_COMPLETE);
         filter.addAction(ReceiverForegroundService.BROADCAST_ERROR);
         LocalBroadcastManager.getInstance(this).registerReceiver(serviceReceiver, filter);
+
+        // Recover UI state after rotation or re-navigate: if the service is already
+        // ready (group created) but this Activity instance has lost its local fields
+        // (currentSsid/currentPass are null), pull credentials from the service cache.
+        // This is the root cause of the "QR code disappeared" bug — BROADCAST_READY was
+        // sent before this activity instance existed, so the broadcast was missed.
+        if (ReceiverForegroundService.isReady && currentSsid == null) {
+            String cachedSsid = ReceiverForegroundService.getCachedSsid();
+            String cachedPass = ReceiverForegroundService.getCachedPass();
+            if (cachedSsid != null && cachedPass != null) {
+                currentSsid = cachedSsid;
+                currentPass = cachedPass;
+                serviceRunning = true;
+                tvStatus.setText("等待接收中...");
+                btnShowQr.setEnabled(true);
+                btnStartReceive.setText(getString(R.string.btn_stop_receive));
+            }
+        }
     }
 
     @Override
@@ -149,6 +181,7 @@ public class ReceiveActivity extends AppCompatActivity {
     }
 
     private void startReceiveService() {
+        serviceRunning = true; // mark immediately so button press works correctly
         tvStatus.setText("初始化中...");
         btnStartReceive.setText(getString(R.string.btn_stop_receive));
         Intent intent = new Intent(this, ReceiverForegroundService.class);

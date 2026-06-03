@@ -5,12 +5,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.text.SimpleDateFormat;
 
 public class FileUtils {
 
@@ -18,8 +18,9 @@ public class FileUtils {
             "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif"
     ));
 
-    private static final SimpleDateFormat DATE_FORMAT =
-            new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+    // ThreadLocal: SimpleDateFormat is not thread-safe
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()));
 
     public static String formatFileSize(long bytes) {
         if (bytes < 0) return "未知";
@@ -66,6 +67,6 @@ public class FileUtils {
     }
 
     public static String formatTimestamp(long timestamp) {
-        return DATE_FORMAT.format(new Date(timestamp));
+        return DATE_FORMAT.get().format(new Date(timestamp));
     }
 }

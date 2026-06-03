@@ -21,6 +21,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.journeyapps.barcodescanner.CaptureActivity;
+
 import com.nfctransfer.app.data.HistoryRepository;
 import com.nfctransfer.app.data.TransferRecord;
 import com.nfctransfer.app.transfer.FileTransferClient;
@@ -40,7 +42,6 @@ import java.util.concurrent.Executors;
 public class SendActivity extends AppCompatActivity {
 
     private static final String TAG = "SendActivity";
-    private static final int QR_SCAN_REQUEST = 1002;
 
     private static final byte[] SELECT_AID_APDU = {
             0x00, (byte) 0xA4, 0x04, 0x00, 0x08,
@@ -58,6 +59,7 @@ public class SendActivity extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private PendingIntent nfcPendingIntent;
     private boolean waitingForNfc = false;
+    private volatile boolean nfcReadInProgress = false;
     private final ExecutorService nfcExecutor = Executors.newSingleThreadExecutor();
 
     private final List<Uri> selectedUris = new ArrayList<>();
@@ -84,6 +86,36 @@ public class SendActivity extends AppCompatActivity {
                     Toast.makeText(this, "需要權限才能傳送檔案", Toast.LENGTH_SHORT).show();
                     progressSend.setVisibility(View.GONE);
                 }
+            });
+
+    private final ActivityResultLauncher<Intent> qrScanLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+                    if (result.getResultCode() != RESULT_CANCELED) {
+                        Toast.makeText(this, "QR Code 掃描失敗", Toast.LENGTH_SHORT).show();
+                    }
+                    return;
+                }
+                String qrContent = result.getData().getStringExtra("SCAN_RESULT");
+                if (qrContent == null) {
+                    Toast.makeText(this, "QR Code 讀取失敗，請重試", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String[] creds = QrCodeHelper.parseQrResult(qrContent);
+                if (creds == null) {
+                    Toast.makeText(this, "QR Code 格式不符，請確認接收方版本", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (selectedUris.isEmpty()) {
+                    Toast.makeText(this, "請先選擇要傳送的檔案", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                progressSend.setVisibility(View.VISIBLE);
+                progressSend.setProgress(0);
+                tvNfcHint.setText("已取得憑證，連線中...");
+                sending = true;
+                btnStartSend.setText("停止傳送");
+                connectAndSend(creds[0], creds[1]);
             });
 
     @Override
@@ -119,8 +151,17 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        btnShowQr.setOnClickListener(v ->
-                QrCodeHelper.startQrScanner(this, QR_SCAN_REQUEST));
+        btnShowQr.setOnClickListener(v -> {
+            if (selectedUris.isEmpty()) {
+                Toast.makeText(this, "請先選擇要傳送的檔案，再掃描 QR Code", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent scanIntent = new Intent(this, CaptureActivity.class);
+            scanIntent.setAction("com.google.zxing.client.android.SCAN");
+            scanIntent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+            scanIntent.putExtra("PROMPT_MESSAGE", "掃描接收方的 QR Code");
+            qrScanLauncher.launch(scanIntent);
+        });
     }
 
     @Override
@@ -205,7 +246,14 @@ public class SendActivity extends AppCompatActivity {
             return;
         }
 
+        // Prevent re-entrance: ignore second tap while first NFC read is in progress
+        if (nfcReadInProgress) {
+            Log.w(TAG, "NFC read already in progress, ignoring tap");
+            return;
+        }
+
         waitingForNfc = false;
+        nfcReadInProgress = true;
         if (nfcAdapter != null) {
             nfcAdapter.disableForegroundDispatch(this);
         }
@@ -261,6 +309,7 @@ public class SendActivity extends AppCompatActivity {
             Log.e(TAG, "NFC error", e);
             runOnUiThread(() -> showNfcError("錯誤: " + e.getMessage()));
         } finally {
+            nfcReadInProgress = false;
             try { isoDep.close(); } catch (IOException ignored) {}
         }
     }
@@ -370,28 +419,4 @@ public class SendActivity extends AppCompatActivity {
         wifiDirectManager.disconnect();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != QR_SCAN_REQUEST || resultCode != RESULT_OK || data == null) return;
-
-        String qrContent = data.getStringExtra("SCAN_RESULT");
-        if (qrContent == null) {
-            Toast.makeText(this, "QR Code 讀取失敗", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String[] creds = QrCodeHelper.parseQrResult(qrContent);
-        if (creds == null) {
-            Toast.makeText(this, "QR Code 格式錯誤", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        progressSend.setVisibility(View.VISIBLE);
-        progressSend.setProgress(0);
-        tvNfcHint.setText("已取得憑證，連線中...");
-        sending = true;
-        btnStartSend.setText("停止傳送");
-        connectAndSend(creds[0], creds[1]);
-    }
 }

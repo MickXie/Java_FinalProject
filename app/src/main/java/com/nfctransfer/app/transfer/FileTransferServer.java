@@ -11,8 +11,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,7 +32,7 @@ public class FileTransferServer {
         void onError(String fileName, Exception e);
     }
 
-    private ServerSocket serverSocket;
+    private volatile ServerSocket serverSocket;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean running = false;
@@ -53,31 +55,47 @@ public class FileTransferServer {
     }
 
     private void acceptAndReceive(Context context, Callback callback) {
-        try {
-            serverSocket = new ServerSocket(PORT);
-            Log.d(TAG, "Listening on port " + PORT);
-
-            while (running) {
-                try {
-                    Socket client = serverSocket.accept();
-                    Log.d(TAG, "Client connected: " + client.getInetAddress());
-                    handleClient(context, client, callback);
-                } catch (IOException e) {
-                    if (running) {
-                        Log.e(TAG, "Accept error", e);
-                        mainHandler.post(() -> {
-                            if (callback != null) callback.onError(null, e);
-                        });
-                    }
-                    break;
+        // Retry bind with SO_REUSEADDR to survive TIME_WAIT from previous session
+        IOException bindError = null;
+        for (int attempt = 0; attempt < 5 && running; attempt++) {
+            try {
+                ServerSocket ss = new ServerSocket();
+                ss.setReuseAddress(true);
+                ss.bind(new InetSocketAddress(PORT));
+                serverSocket = ss;
+                bindError = null;
+                break;
+            } catch (IOException e) {
+                bindError = e;
+                Log.w(TAG, "Bind attempt " + (attempt + 1) + " failed: " + e.getMessage());
+                if (attempt < 4 && running) {
+                    try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
                 }
             }
-        } catch (IOException e) {
+        }
+
+        if (bindError != null || serverSocket == null) {
             if (running) {
-                Log.e(TAG, "Server socket error", e);
-                mainHandler.post(() -> {
-                    if (callback != null) callback.onError(null, e);
-                });
+                final IOException err = bindError;
+                mainHandler.post(() -> { if (callback != null) callback.onError(null, err); });
+            }
+            return;
+        }
+
+        Log.d(TAG, "Listening on port " + PORT);
+        while (running && !serverSocket.isClosed()) {
+            try {
+                Socket client = serverSocket.accept();
+                Log.d(TAG, "Client connected: " + client.getInetAddress());
+                handleClient(context, client, callback);
+            } catch (SocketException e) {
+                break; // normal shutdown via serverSocket.close()
+            } catch (IOException e) {
+                if (running) {
+                    Log.e(TAG, "Accept error", e);
+                    mainHandler.post(() -> { if (callback != null) callback.onError(null, e); });
+                }
+                break;
             }
         }
     }

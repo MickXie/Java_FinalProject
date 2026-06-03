@@ -5,6 +5,10 @@
     <!-- NFC -->
     <uses-permission android:name="android.permission.NFC" />
 
+    <!-- Camera (required for QR code scanning) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <!-- Wi-Fi Direct -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -24,6 +28,12 @@
     <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- Network state (required for requestConnectionInfo) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Coarse location required on some API 31-32 OEM ROMs alongside FINE -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="32" />
 
     <!-- Misc -->
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -89,12 +99,6 @@
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             tools:replace="android:screenOrientation" />
-
-        <!-- Transfer Foreground Service -->
-        <service
-            android:name=".transfer.TransferService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <!-- Receiver Foreground Service -->
         <service

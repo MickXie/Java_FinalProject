@@ -39,6 +39,11 @@ public class NfcHceService extends HostApduService {
 
     private static final byte INS_READ = (byte) 0xB0;
 
+    private static final byte[] AID_BYTES = {
+            (byte)0xF0,(byte)0x4E,(byte)0x46,(byte)0x43,
+            (byte)0x54,(byte)0x52,(byte)0x01,(byte)0x01
+    };
+
     /** JSON credentials staged by the Activity; volatile for cross-thread visibility. */
     private static volatile String pendingJson = null;
 
@@ -61,27 +66,25 @@ public class NfcHceService extends HostApduService {
 
     @Override
     public byte[] processCommandApdu(byte[] commandApdu, Bundle extras) {
-        if (commandApdu == null) {
+        try {
+            if (commandApdu == null) return SW_UNKNOWN;
+            Log.d(TAG, "Received APDU: " + bytesToHex(commandApdu));
+            if (isSelectAid(commandApdu)) {
+                if (pendingJson == null) {
+                    Log.w(TAG, "SELECT AID — credentials not ready");
+                    return SW_UNKNOWN;
+                }
+                return SW_OK;
+            }
+            if (commandApdu.length >= 2 && commandApdu[1] == INS_READ) {
+                return buildReadResponse();
+            }
+            Log.w(TAG, "Unrecognised APDU");
+            return SW_UNKNOWN;
+        } catch (Exception e) {
+            Log.e(TAG, "processCommandApdu error", e);
             return SW_UNKNOWN;
         }
-
-        Log.d(TAG, "Received APDU: " + bytesToHex(commandApdu));
-
-        if (isSelectAid(commandApdu)) {
-            if (pendingJson == null) {
-                Log.w(TAG, "SELECT AID — credentials not ready, rejecting");
-                return SW_UNKNOWN;
-            }
-            Log.d(TAG, "SELECT AID — responding 9000");
-            return SW_OK;
-        }
-
-        if (commandApdu.length >= 2 && commandApdu[1] == INS_READ) {
-            return buildReadResponse();
-        }
-
-        Log.w(TAG, "Unrecognised APDU");
-        return SW_UNKNOWN;
     }
 
     @Override
@@ -92,9 +95,14 @@ public class NfcHceService extends HostApduService {
     // -------------------------------------------------------------------------
 
     private boolean isSelectAid(byte[] apdu) {
-        if (apdu.length < SELECT_APDU_HEADER.length) return false;
+        if (apdu.length < SELECT_APDU_HEADER.length + 1 + AID_BYTES.length) return false;
         for (int i = 0; i < SELECT_APDU_HEADER.length; i++) {
             if (apdu[i] != SELECT_APDU_HEADER[i]) return false;
+        }
+        int lc = apdu[4] & 0xFF;
+        if (lc != AID_BYTES.length) return false;
+        for (int i = 0; i < AID_BYTES.length; i++) {
+            if (apdu[5 + i] != AID_BYTES[i]) return false;
         }
         return true;
     }

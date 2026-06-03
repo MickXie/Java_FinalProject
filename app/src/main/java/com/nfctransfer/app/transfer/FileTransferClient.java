@@ -20,8 +20,13 @@ public class FileTransferClient {
 
     private static final String TAG = "FileTransferClient";
     private static final int BUFFER_SIZE = 65536;
-    private static final int RETRY_COUNT = 3;
-    private static final int RETRY_DELAY_MS = 1000;
+    private static final int RETRY_COUNT = 15;
+    // Pixel (stock Android) DHCP negotiation after Wi-Fi Direct group formation
+    // can take 4–6 s; Samsung OEM is typically done in ~1 s.  With 15 retries
+    // at 500 ms gap we cover up to ~7.5 s of DHCP settle time without increasing
+    // the socket connect timeout (which blocks the thread).
+    private static final int RETRY_DELAY_MS = 500;
+    private static final int SOCKET_TIMEOUT_MS = 3000;
 
     public interface Callback {
         void onProgressUpdate(String fileName, int percent);
@@ -46,12 +51,16 @@ public class FileTransferClient {
         IOException lastError = null;
 
         for (int attempt = 0; attempt < RETRY_COUNT; attempt++) {
+            Socket s = new Socket();
             try {
-                socket = new Socket(serverIp, FileTransferServer.PORT);
+                s.connect(new java.net.InetSocketAddress(serverIp, FileTransferServer.PORT),
+                        SOCKET_TIMEOUT_MS);
+                socket = s;
                 break;
             } catch (IOException e) {
                 lastError = e;
-                Log.w(TAG, "Connection attempt " + (attempt + 1) + " failed, retrying...");
+                try { s.close(); } catch (IOException ignored) {} // prevent fd leak
+                Log.w(TAG, "Socket attempt " + (attempt + 1) + "/" + RETRY_COUNT + " failed");
                 try { Thread.sleep(RETRY_DELAY_MS); } catch (InterruptedException ignored) {}
             }
         }

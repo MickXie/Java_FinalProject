@@ -22,9 +22,13 @@ public class PermissionHelper {
     public static String[] getRequiredPermissions() {
         List<String> perms = new ArrayList<>();
         perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        perms.add(Manifest.permission.CAMERA);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // NEARBY_WIFI_DEVICES exists from API 31 (S), not just 33
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             perms.add(Manifest.permission.NEARBY_WIFI_DEVICES);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             perms.add(Manifest.permission.READ_MEDIA_IMAGES);
             perms.add(Manifest.permission.READ_MEDIA_VIDEO);
             perms.add(Manifest.permission.READ_MEDIA_AUDIO);
