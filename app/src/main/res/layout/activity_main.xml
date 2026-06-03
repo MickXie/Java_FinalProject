@@ -1,73 +1,331 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/background"
-    android:gravity="center_horizontal"
-    android:padding="24dp">
+    android:background="@color/bg_deep_slate">
 
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:textColor="@color/primary"
-        android:layout_marginTop="48dp"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/tv_subtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NFC 檔案傳輸"
-        android:textSize="14sp"
-        android:textColor="@color/text_secondary"
-        android:layout_marginBottom="56dp" />
-
-    <Button
-        android:id="@+id/btn_send"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="@string/btn_send"
-        android:textSize="18sp"
-        android:backgroundTint="@color/primary"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="match_parent"
+        android:paddingBottom="40dp">
 
-    <Button
-        android:id="@+id/btn_receive"
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_gray"
+            android:layout_marginTop="48dp"
+            android:layout_marginStart="24dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/layout_profile_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_title"
+            app:layout_constraintStart_toStartOf="@id/tv_title">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                app:cardCornerRadius="26dp"
+                app:cardElevation="0dp"
+                android:layout_marginEnd="12dp">
+                <ImageView
+                    android:id="@+id/iv_avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/sym_def_app_icon"
+                    android:background="#E2E8F0"/>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="歡迎回來，"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_gray" />
+                <TextView
+                    android:id="@+id/tv_user_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="顏家駿"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_light" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_big_icons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp"
+            android:layout_marginTop="32dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_profile_header">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btn_send_card"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                app:cardCornerRadius="24dp"
+                app:cardBackgroundColor="@color/accent_mustard"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_upload"
+                        app:tint="@color/bg_deep_slate"
+                        android:layout_marginBottom="12dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="傳送檔案"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/bg_deep_slate" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btn_receive_card"
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                app:cardCornerRadius="24dp"
+                app:cardBackgroundColor="@color/accent_rust"
+                app:cardElevation="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_save"
+                        app:tint="@color/bg_deep_slate"
+                        android:layout_marginBottom="12dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="接收準備"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/bg_deep_slate" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/btn_history_card"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="@color/accent_olive"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_big_icons">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="24dp">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_menu_recent_history"
+                    app:tint="@color/bg_deep_slate"
+                    android:layout_marginEnd="16dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="查看傳輸紀錄"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/bg_deep_slate" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/btn_profile_card"
+            android:layout_width="match_parent"
+            android:layout_height="76dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="@color/accent_slate_blue"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/btn_history_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="24dp">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    app:tint="@color/bg_deep_slate"
+                    android:layout_marginEnd="16dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="個人主頁與設定"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/bg_deep_slate" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tv_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="P2P Transfer v1.0.0"
+            android:textSize="12sp"
+            android:textColor="@color/text_gray"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottom_sheet"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="@string/btn_receive"
-        android:textSize="18sp"
-        android:backgroundTint="@color/accent"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="400dp"
+        app:cardCornerRadius="32dp"
+        app:cardBackgroundColor="@color/floating_card_bg"
+        app:cardElevation="24dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:behavior_hideable="true"
+        app:behavior_peekHeight="0dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="24dp">
 
-    <Button
-        android:id="@+id/btn_history"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:text="@string/btn_history"
-        android:textSize="18sp"
-        android:backgroundTint="@color/primary_dark"
-        android:layout_marginBottom="16dp" />
+            <View
+                android:layout_width="48dp"
+                android:layout_height="6dp"
+                android:background="@color/handle_gray"
+                android:layout_marginBottom="24dp"
+                app:cornerRadius="3dp" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+            <TextView
+                android:id="@+id/tv_sheet_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="等待 NFC 感應..."
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_dark"
+                android:layout_marginBottom="24dp"/>
 
-    <TextView
-        android:id="@+id/tv_nfc_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="13sp"
-        android:textColor="@color/text_secondary"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
+            <LinearLayout
+                android:id="@+id/layout_send_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone">
 
-</LinearLayout>
+                <Button
+                    android:id="@+id/btn_pick_file"
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:text="選擇要傳送的檔案"
+                    android:textColor="@color/bg_deep_slate"
+                    android:backgroundTint="@color/accent_mustard"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    android:paddingHorizontal="32dp"/>
+
+                <TextView
+                    android:id="@+id/tv_selected_file"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="尚未選擇檔案"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_gray"
+                    android:layout_marginTop="12dp"
+                    android:maxLines="1"
+                    android:ellipsize="middle"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="16dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="傳輸進度"
+                        android:textColor="@color/text_dark"
+                        android:textStyle="bold"/>
+                    <TextView
+                        android:id="@+id/tv_progress_percent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0%"
+                        android:textColor="@color/accent_mustard"
+                        android:textStyle="bold"
+                        android:layout_alignParentEnd="true"/>
+                </RelativeLayout>
+
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:progress="0"
+                    android:max="100"
+                    android:progressTint="@color/accent_mustard"
+                    android:progressBackgroundTint="@color/handle_gray"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -14,4 +14,15 @@
     <color name="status_send">#4CAF50</color>
     <color name="status_receive">#2196F3</color>
     <color name="status_error">#F44336</color>
+
+    <color name="bg_premium_navy">#0A192F</color>
+
+    <color name="bg_deep_slate">#1E232B</color>
+
+    <color name="floating_card_bg">#F4F4F0</color>
+    <color name="text_dark">#2C3036</color>
+    <color name="text_light">#E0E2E5</color>
+    <color name="text_gray">#8B939C</color>
+
+    <color name="accent_mustard">#DFA037</color> <color name="accent_rust">#CE5A44</color>    <color name="accent_olive">#5E7153</color>   <color name="accent_slate_blue">#5A7684</color> <color name="handle_gray">#D1D5DB</color>
 </resources>
