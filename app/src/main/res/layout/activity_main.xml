@@ -224,13 +224,14 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/bottom_sheet"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="450dp"
         app:cardCornerRadius="32dp"
         app:cardBackgroundColor="@color/floating_card_bg"
         app:cardElevation="24dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:behavior_hideable="true"
         app:behavior_peekHeight="0dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -249,7 +250,7 @@
                 android:id="@+id/tv_sheet_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="等待 NFC 感應..."
+                android:text="等待操作..."
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_dark"
@@ -284,6 +285,34 @@
                     android:layout_marginTop="12dp"
                     android:maxLines="1"
                     android:ellipsize="middle"/>
+
+                <Button
+                    android:id="@+id/btn_scan_qr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="掃描接收方 QR Code"
+                    android:textColor="@color/bg_deep_slate"
+                    android:backgroundTint="@color/accent_olive"
+                    android:textStyle="bold"
+                    app:cornerRadius="16dp"
+                    android:layout_marginTop="16dp"
+                    android:paddingHorizontal="24dp"
+                    android:enabled="false"/> </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_receive_action"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/iv_qr_code"
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone"/>
             </LinearLayout>
 
             <LinearLayout
@@ -299,6 +328,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp">
                     <TextView
+                        android:id="@+id/tv_progress_filename"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="傳輸進度"
